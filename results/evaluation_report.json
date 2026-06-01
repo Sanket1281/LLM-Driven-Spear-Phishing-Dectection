@@ -1,0 +1,65 @@
+{
+  "checkpoint": "D:\\Codes\\Pycharm Projects\\LANG CHAIN\\Antigravity_Projects\\Research_Paper\\checkpoints\\best_model_full_model.pt",
+  "accuracy": 0.9853658536585366,
+  "classification_report": {
+    "benign": {
+      "precision": 0.975,
+      "recall": 0.975,
+      "f1-score": 0.975,
+      "support": 120.0
+    },
+    "phishing": {
+      "precision": 0.9791666666666666,
+      "recall": 0.9791666666666666,
+      "f1-score": 0.9791666666666666,
+      "support": 144.0
+    },
+    "spear-phishing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 146.0
+    },
+    "accuracy": 0.9853658536585366,
+    "macro avg": {
+      "precision": 0.9847222222222222,
+      "recall": 0.9847222222222222,
+      "f1-score": 0.9847222222222222,
+      "support": 410.0
+    },
+    "weighted avg": {
+      "precision": 0.9853658536585366,
+      "recall": 0.9853658536585366,
+      "f1-score": 0.9853658536585366,
+      "support": 410.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      117,
+      3,
+      0
+    ],
+    [
+      3,
+      141,
+      0
+    ],
+    [
+      0,
+      0,
+      146
+    ]
+  ],
+  "auc_scores": {
+    "benign": 0.9985057471264368,
+    "phishing": 0.9950657894736842,
+    "spear-phishing": 0.9999999999999999
+  },
+  "num_test_samples": 410,
+  "per_class_counts": {
+    "benign": 120,
+    "phishing": 144,
+    "spear-phishing": 146
+  }
+}

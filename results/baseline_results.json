@@ -1,0 +1,68 @@
+{
+  "logistic_regression_tfidf": {
+    "accuracy": 0.9878048780487805,
+    "macro_f1": 0.9877460043337264,
+    "f1_benign": 0.9873417721518988,
+    "f1_phishing": 0.9826989619377162,
+    "f1_spear-phishing": 0.9931972789115646,
+    "train_time_s": 1.54
+  },
+  "random_forest_tfidf": {
+    "accuracy": 0.9902439024390244,
+    "macro_f1": 0.9900486135242016,
+    "f1_benign": 0.9874476987447699,
+    "f1_phishing": 0.9861111111111112,
+    "f1_spear-phishing": 0.9965870307167235,
+    "train_time_s": 1.83
+  },
+  "random_forest_handcrafted": {
+    "accuracy": 0.9585365853658536,
+    "macro_f1": 0.9574844006568144,
+    "f1_benign": 0.936,
+    "f1_phishing": 0.9571428571428572,
+    "f1_spear-phishing": 0.9793103448275862,
+    "train_time_s": 2.09,
+    "top_10_features": [
+      {
+        "feature": "caps_ratio",
+        "importance": 0.2332
+      },
+      {
+        "feature": "subject_len",
+        "importance": 0.1551
+      },
+      {
+        "feature": "has_greeting",
+        "importance": 0.1548
+      },
+      {
+        "feature": "urgency_score",
+        "importance": 0.0885
+      },
+      {
+        "feature": "avg_word_len",
+        "importance": 0.0792
+      },
+      {
+        "feature": "punctuation_density",
+        "importance": 0.0638
+      },
+      {
+        "feature": "type_token_ratio",
+        "importance": 0.0471
+      },
+      {
+        "feature": "body_len",
+        "importance": 0.0364
+      },
+      {
+        "feature": "exclamation_count",
+        "importance": 0.0317
+      },
+      {
+        "feature": "avg_sentence_len",
+        "importance": 0.0225
+      }
+    ]
+  }
+}
