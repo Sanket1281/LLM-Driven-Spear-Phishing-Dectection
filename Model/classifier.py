@@ -143,14 +143,13 @@ class ClassifierHead(nn.Module):
         # ── Branch A ──────────────────────────────────────────────
         cls_repr = self.cls_proj(cls_output)    # (B, 128)
 
-        # ── Branch B (optional) ───────────────────────────────────
+        # ── Branch B (optional) ──────
         if self.use_handcrafted and features is not None and self.feat_proj is not None:
             feat_repr = self.feat_proj(features.float())   # (B, 64)
             fused     = torch.cat([cls_repr, feat_repr], dim=-1)  # (B, 192)
         else:
             fused = cls_repr                               # (B, 128) ablation mode
 
-        # ── Fusion → logits ───────────────────────────────────────
         logits = self.fusion(fused)             # (B, 3)
 
         return logits
