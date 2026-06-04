@@ -26,7 +26,7 @@ from config import Config
 cfg = Config()
 
 # ─────────────────────────────────────────────
-#  STEP 1 — Download BERT vocab.txt
+#  STEP 1 — Downloading BERT vocab.txt
 # ─────────────────────────────────────────────
 
 VOCAB_URL = (
@@ -283,7 +283,6 @@ class PhishingTokenizer:
             if skip_special_tokens and i in special:
                 continue
             tokens.append(tok)
-        # Merge WordPiece ## subwords
         text = " ".join(tokens)
         text = re.sub(r" ##", "", text)
         return text.strip()
