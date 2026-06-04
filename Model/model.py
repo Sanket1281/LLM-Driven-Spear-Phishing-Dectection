@@ -103,9 +103,6 @@ class PhishingTransformer(nn.Module):
         self.encoder    = PhishingEncoder(config)
         self.classifier = ClassifierHead(config)
 
-        # ── Loss function ─────────────────────────────────────────
-        # CrossEntropyLoss applies log-softmax internally (numerically stable)
-        # class_weights compensates for mild class imbalance
         self.criterion = nn.CrossEntropyLoss(
             weight     = class_weights,
             label_smoothing = 0.1,   # prevents overconfident predictions
@@ -117,8 +114,8 @@ class PhishingTransformer(nn.Module):
         input_ids:      torch.Tensor,            # (B, L)
         attention_mask: torch.Tensor,            # (B, L)
         token_type_ids: torch.Tensor,            # (B, L)
-        features:       Optional[torch.Tensor],  # (B, F) or None
-        labels:         Optional[torch.Tensor] = None,  # (B,) or None
+        features:       Optional[torch.Tensor],  # (B, F) 
+        labels:         Optional[torch.Tensor] = None,  # (B,)
         return_weights: bool = False,
     ) -> ModelOutput:
 
@@ -135,10 +132,9 @@ class PhishingTransformer(nn.Module):
         # ── 2. Classify ───────────────────────────────────────────
         logits = self.classifier(cls_output, features)   # (B, 3)
 
-        # ── 3. Loss (only if labels provided) ─────────────────────
+        # ── 3. Loss ─────────────────────
         loss = None
         if labels is not None:
-            # Move class weights to same device as logits if needed
             if self.criterion.weight is not None:
                 self.criterion.weight = self.criterion.weight.to(logits.device)
             loss = self.criterion(logits, labels)
@@ -231,7 +227,6 @@ def smoke_test():
     F_dim  = cfg.model.num_handcrafted_features
     n_cls  = cfg.model.num_labels
 
-    # Simulate a full batch as it would come from dataset.py + features.py
     input_ids      = torch.randint(0, cfg.tokenizer.vocab_size, (B, L), device=device)
     attention_mask = torch.ones(B, L, dtype=torch.long, device=device)
     attention_mask[:, -20:] = 0
@@ -240,13 +235,10 @@ def smoke_test():
     features       = torch.randn(B, F_dim, device=device)
     labels         = torch.randint(0, n_cls, (B,), device=device)
 
-    # Class weights (as would come from compute_class_weights)
     class_weights  = torch.tensor([1.13, 0.95, 0.94], device=device)
 
-    # ── Build full model ──────────────────────────────────────────
     model = PhishingTransformer(class_weights=class_weights).to(device)
 
-    # ── Forward with labels (training mode) ──────────────────────
     print(f"\n── Training forward pass ────────────────────────")
     model.train()
     output = model(input_ids, attention_mask, token_type_ids, features, labels)
@@ -265,11 +257,9 @@ def smoke_test():
     print(f"  All shape checks  : ✓")
     print(f"  Loss is valid     : ✓")
 
-    # ── Backward pass (gradient flow check) ──────────────────────
     print(f"\n── Gradient flow check ──────────────────────────")
     output.loss.backward()
 
-    # Check gradients exist and are non-zero for key parameters
     enc_grad  = model.encoder.layers[0].attention.q_proj.weight.grad
     cls_grad  = model.classifier.fusion[-1].weight.grad
     emb_grad  = model.encoder.embeddings.token_embeddings.weight.grad
@@ -282,7 +272,6 @@ def smoke_test():
     print(f"  Embedding grad norm         : {emb_grad.norm().item():.4f}")
     print(f"  Gradients flow end-to-end   : ✓")
 
-    # ── Inference mode (no labels) ────────────────────────────────
     print(f"\n── Inference forward pass ───────────────────────")
     result = model.predict(input_ids, attention_mask, token_type_ids, features)
     print(f"  Predictions  : {result['predictions']}")
@@ -291,7 +280,6 @@ def smoke_test():
     assert all(p in cfg.labels.labels for p in result["predictions"])
     print(f"  Predict API  : ✓")
 
-    # ── Save / Load ───────────────────────────────────────────────
     print(f"\n── Save / Load check ────────────────────────────")
     save_path = "checkpoints/smoke_test_model.pt"
     model.save(save_path)
@@ -307,9 +295,8 @@ def smoke_test():
     assert torch.allclose(out_orig.logits, out_loaded.logits, atol=1e-4), \
         "Loaded model produces different outputs!"
     print(f"  Saved and reloaded outputs match : ✓")
-    os.remove(save_path)   # cleanup smoke test checkpoint
+    os.remove(save_path)
 
-    # ── Full parameter count ──────────────────────────────────────
     print(f"\n── Full model parameter count ───────────────────")
     counts = model.count_parameters()
     print(f"  Encoder params    : {counts['encoder']:>12,}")
@@ -319,8 +306,8 @@ def smoke_test():
 
     # Estimated VRAM during training (rough)
     param_mb   = counts["total"] * 4 / 1024**2
-    grad_mb    = param_mb                    # gradients same size as params
-    adam_mb    = param_mb * 2               # Adam keeps 2 momentum buffers
+    grad_mb    = param_mb                   
+    adam_mb    = param_mb * 2              
     activation_mb = B * L * H * 4 * cfg.model.num_encoder_layers / 1024**2
     total_mb   = param_mb + grad_mb + adam_mb + activation_mb
     print(f"\n── Estimated VRAM usage (float32) ───────────────")
