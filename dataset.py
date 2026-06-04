@@ -57,7 +57,7 @@ class PhishingDataset(Dataset):
         tokenizer:   PhishingTokenizer,
         label2id:    Dict[str, int],
         max_seq_len: int  = cfg.tokenizer.max_seq_len,
-        augment:     bool = False,   # only True for training split
+        augment:     bool = False,
     ):
         self.tokenizer   = tokenizer
         self.label2id    = label2id
@@ -266,9 +266,9 @@ def build_dataloaders(
     train_loader = DataLoader(
         train_ds,
         batch_size  = config.training.batch_size,
-        shuffle     = True,          # essential for training
+        shuffle     = True,          
         collate_fn  = collate_fn,
-        num_workers = 0,             # 0 = main process; safe on Windows
+        num_workers = 0,            
         pin_memory  = True,          # faster CPU→GPU transfer
         drop_last   = False,
     )
@@ -354,7 +354,6 @@ def smoke_test():
     print(f"    subject : {raw['subject'][:60]}")
     print(f"    body    : {raw['body'][:80]}...")
 
-    # Check padding — last token should be PAD for most records
     pad_counts = (batch["input_ids"] == cfg.tokenizer.pad_token_id).sum(dim=1)
     print(f"\n  Pad tokens per record in batch: {pad_counts.tolist()}")
 
