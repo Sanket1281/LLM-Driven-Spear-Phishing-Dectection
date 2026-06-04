@@ -8,12 +8,12 @@ from email import policy
 from pathlib import Path
 from tqdm import tqdm
 
-random.seed(42)  # reproducibility for your paper
+random.seed(42)
 
 # ---------- Config ----------
-ENRON_CSV = "emails.csv"  # from Kaggle Enron dump
-KAGGLE_PHISH_CSV = "Phishing_Email.csv"  # from Kaggle phishing dataset
-SPEAR_JSONL = "spear_phishing_cleaned.jsonl"  # your cleaned synthetic
+ENRON_CSV = "emails.csv"
+KAGGLE_PHISH_CSV = "Phishing_Email.csv"
+SPEAR_JSONL = "spear_phishing_cleaned.jsonl" 
 
 OUTPUT_FILE = "unified_dataset.jsonl"
 
@@ -59,8 +59,6 @@ def load_enron(csv_path, target_count):
 
     with open(csv_path, "r", encoding="utf-8", errors="ignore") as f:
         reader = csv.DictReader(f)
-        # Enron CSV has 'file' and 'message' columns
-        # 'message' contains full raw email
         for row in tqdm(reader, desc="Parsing Enron"):
             try:
                 msg = email.message_from_string(row["message"], policy=policy.default)
@@ -79,11 +77,10 @@ def load_enron(csv_path, target_count):
                 else:
                     body = msg.get_content() if hasattr(msg, "get_content") else str(msg.get_payload())
 
-                # Filter: skip very short / very long / forwarded chains
                 word_count = len(body.split())
                 if word_count < 30 or word_count > 800:
                     continue
-                if "-----Original Message-----" in body:  # skip forwards/replies
+                if "-----Original Message-----" in body:
                     continue
                 if not from_ or not subject:
                     continue
@@ -94,7 +91,7 @@ def load_enron(csv_path, target_count):
                     source="enron"
                 ))
 
-                if len(records) >= target_count * 3:  # over-sample then random pick
+                if len(records) >= target_count * 3: 
                     break
             except Exception:
                 continue
@@ -114,14 +111,12 @@ def load_kaggle_phishing(csv_path, target_count):
     csv.field_size_limit(10_000_000)
 
     with open(csv_path, "r", encoding="utf-8", errors="ignore") as f:
-        # Read raw lines, skip any line that's clearly corrupted
         lines = []
         header = None
         for i, line in enumerate(f):
             if i == 0:
                 header = line
                 continue
-            # Skip lines that are suspiciously large (>500KB = corrupt)
             if len(line) > 500_000:
                 skipped += 1
                 continue
