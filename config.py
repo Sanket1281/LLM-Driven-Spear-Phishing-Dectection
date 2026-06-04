@@ -15,10 +15,8 @@ from typing import List
 # ─────────────────────────────────────────────
 @dataclass
 class PathConfig:
-    # Project root — all paths resolve relative to this
     root: str = os.path.abspath(os.path.dirname(__file__))
 
-    # Raw data
     train_file:      str = ""
     val_file:        str = ""
     test_file:       str = ""
@@ -48,8 +46,8 @@ class PathConfig:
 # ─────────────────────────────────────────────
 @dataclass
 class TokenizerConfig:
-    vocab_size:         int = 30_522      # Standard BERT WordPiece vocab size
-    max_seq_len:        int = 512         # Max tokens per email (subject + body)
+    vocab_size:         int = 30_522      
+    max_seq_len:        int = 512         
     pad_token:          str = "[PAD]"
     unk_token:          str = "[UNK]"
     cls_token:          str = "[CLS]"
@@ -61,8 +59,6 @@ class TokenizerConfig:
     sep_token_id:       int = 102
     mask_token_id:      int = 103
 
-    # Email-specific field separator
-    # Format fed to model: [CLS] <subject> [SEP] <body> [SEP]
     truncation_strategy: str = "body_first"   # truncate body before subject
 
 
@@ -125,19 +121,16 @@ class ModelConfig:
 # ─────────────────────────────────────────────
 @dataclass
 class TrainingConfig:
-    # Batch size & accumulation
-    # Effective batch size = batch_size × grad_accumulation_steps
-    # 16 × 4 = 64 effective — good for 6GB VRAM
     batch_size:                 int = 16
     grad_accumulation_steps:    int = 4
-    eval_batch_size:            int = 32   # no backward pass so can be larger
+    eval_batch_size:            int = 32  
 
     # Epochs
     num_epochs:                 int = 20
     early_stopping_patience:    int = 5    # stop if val F1 doesn't improve for 5 epochs
 
     # Optimiser — AdamW (standard for transformers)
-    learning_rate:              float = 3e-4   # higher than fine-tuning LR since training from scratch
+    learning_rate:              float = 3e-4  
     weight_decay:               float = 0.01
     adam_epsilon:               float = 1e-8
     adam_beta1:                 float = 0.9
@@ -146,14 +139,12 @@ class TrainingConfig:
 
     # LR scheduler
     scheduler_type:             str   = "linear_warmup_cosine"
-    warmup_ratio:               float = 0.1   # 10% of total steps used for warmup
+    warmup_ratio:               float = 0.1
 
     # Mixed precision (AMP) — critical for 6GB VRAM
     use_amp:                    bool  = True
-    amp_dtype:                  str   = "float16"   # bfloat16 if Ampere+ GPU, else float16
-
-    # Class weights — compensate for mild imbalance (benign ~29% vs others ~35%)
-    # Set to None to disable, or compute dynamically in train.py
+    amp_dtype:                  str   = "float16" 
+    
     use_class_weights:          bool  = True
 
     # Reproducibility
@@ -165,7 +156,7 @@ class TrainingConfig:
     save_best_only:             bool  = True
 
     # Feature extractor
-    use_handcrafted_features:   bool  = True   # set False to run BERT-only ablation
+    use_handcrafted_features:   bool  = True   
     use_perplexity_feature:     bool  = True   # GPT-2 perplexity score (LLM detection signal)
 
 
@@ -199,7 +190,7 @@ class FeatureConfig:
     # GPT-2 perplexity (for LLM-generated email detection)
     perplexity_model:   str   = "gpt2"           # loaded once, cached
     perplexity_max_len: int   = 512
-    perplexity_device:  str   = "cpu"            # run on CPU to save GPU VRAM for training
+    perplexity_device:  str   = "cpu"         
 
     # URL features
     max_urls_clip:      int   = 10               # clip URL count at 10 to avoid outlier skew
