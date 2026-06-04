@@ -135,7 +135,6 @@ def train(config: Config = cfg):
     print(f"  Features   : {config.training.use_handcrafted_features}")
     print(f"  Perplexity : {config.training.use_perplexity_feature}")
 
-    # ── Determine run name EARLY so it is available everywhere ────
     if not config.training.use_handcrafted_features:
         run_name = "no_features"
     elif not config.training.use_perplexity_feature:
