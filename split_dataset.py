@@ -25,7 +25,6 @@ print(f"📥 Loaded {len(records)} records")
 
 
 # ---------- Leakage prevention: hash-based dedup ----------
-# Hash on (subject + first 100 chars of body) — catches reformatted duplicates
 def content_hash(r):
     key = (r["subject"][:100] + r["body"][:200]).lower()
     return hashlib.md5(key.encode()).hexdigest()
