@@ -85,7 +85,6 @@ class TokenEmbeddings(nn.Module):
         std = config.model.initializer_range  # 0.02
         nn.init.normal_(self.token_embeddings.weight,      mean=0.0, std=std)
         nn.init.normal_(self.token_type_embeddings.weight, mean=0.0, std=std)
-        # Zero out the padding embedding row (keeps pad_idx = zero vector)
         with torch.no_grad():
             self.token_embeddings.weight[config.tokenizer.pad_token_id].fill_(0)
 
@@ -147,7 +146,6 @@ class RelativePositionEmbeddings(nn.Module):
         self.hidden_size = m.hidden_size              # 256
         table_size      = 2 * self.K                  # 1024
 
-        # Learnable position embedding table
         self.position_embeddings = nn.Embedding(
             num_embeddings = table_size,
             embedding_dim  = m.hidden_size,
@@ -176,16 +174,12 @@ class RelativePositionEmbeddings(nn.Module):
 
         Returns: (seq_len, seq_len)  dtype=long
         """
-        # positions: [0, 1, 2, ..., L-1]
         positions = torch.arange(seq_len, device=device)   # (L,)
 
-        # Pairwise distance matrix: dist[i, j] = i - j
         dist_matrix = positions.unsqueeze(1) - positions.unsqueeze(0)   # (L, L)
 
-        # Clip to [-K, K-1]
         dist_matrix = dist_matrix.clamp(-self.K, self.K - 1)
 
-        # Shift to non-negative index range [0, 2K-1]
         idx_matrix  = dist_matrix + self.K   # (L, L)
 
         return idx_matrix.long()
