@@ -202,9 +202,6 @@ class PerplexityScorer:
     Loaded once and reused across all emails.
     """
 
-    # Population statistics for Z-score normalisation
-    # These are approximate values from phishing email research
-    # Will be updated after first batch extraction if fit() is called
     POP_MEAN = 150.0
     POP_STD  = 80.0
 
@@ -242,7 +239,7 @@ class PerplexityScorer:
 
         text = text.strip()
         if not text or len(text.split()) < 5:
-            return self.POP_MEAN   # too short to score reliably
+            return self.POP_MEAN  
 
         try:
             inputs = self._tokenizer(
@@ -259,12 +256,10 @@ class PerplexityScorer:
 
             with torch.no_grad():
                 outputs = self._model(input_ids, labels=input_ids)
-                # outputs.loss = mean negative log-likelihood per token
                 nll = outputs.loss.item()
 
             perplexity = math.exp(nll)
 
-            # Clamp to reasonable range (avoid inf on very bad text)
             perplexity = min(perplexity, 10_000.0)
             return perplexity
 
@@ -343,7 +338,7 @@ class FeatureExtractor:
 
         def score(keywords):
             hits = sum(1 for kw in keywords if kw in text)
-            return hits / math.log(word_count + 2)   # log-normalise by length
+            return hits / math.log(word_count + 2)  
 
         urgency   = score(URGENCY_KEYWORDS)
         authority = score(AUTHORITY_KEYWORDS)
@@ -571,7 +566,7 @@ def smoke_test():
         print(f"    Subject: {email['subject'][:55]}...")
         # Print non-zero features
         for i, (name, val) in enumerate(zip(feature_names, vec)):
-            if val != 0.0 and i < 23:   # skip perplexity features (disabled)
+            if val != 0.0 and i < 23: 
                 print(f"    {name:<25}: {val:.4f}")
 
     # ── Batch extraction ──────────────────────────────────────────
@@ -583,7 +578,6 @@ def smoke_test():
     print(f"  No NaN/Inf  : ✓")
     print(f"  Batch extraction : ✓")
 
-    # ── Verify LLM phishing has lower url count on susp tld ──────
     print(f"\n── Feature sanity checks ────────────────────────")
     spear_vec = extractor_fast.extract(emails[0]["subject"], emails[0]["body"])
     phish_vec = extractor_fast.extract(emails[1]["subject"], emails[1]["body"])
