@@ -122,7 +122,6 @@ class EncoderLayer(nn.Module):
         self.attention   = DisentangledSelfAttention(config)
         self.ffn         = FeedForwardNetwork(config)
 
-        # Two LayerNorms: one after attention, one after FFN
         self.norm1 = nn.LayerNorm(m.hidden_size, eps=m.layer_norm_eps)
         self.norm2 = nn.LayerNorm(m.hidden_size, eps=m.layer_norm_eps)
 
@@ -149,7 +148,7 @@ class EncoderLayer(nn.Module):
         # Residual + LayerNorm (post-norm style)
         hidden_states = self.norm1(hidden_states + self.dropout(attn_out))
 
-        # ── FFN block ─────────────────────────────────────────────
+        # ── FFN block───
         ffn_out       = self.ffn(hidden_states)
         hidden_states = self.norm2(hidden_states + self.dropout(ffn_out))
 
@@ -319,9 +318,6 @@ def smoke_test():
 
     # ── Padding positions have no influence ───────────────────────
     print(f"\n── Padding isolation check ──────────────────────")
-    # Pad token outputs should differ from real token outputs
-    # (they still get updated by attention from real tokens pointing at them,
-    #  but they should not dominate — std check is sufficient)
     pad_repr  = last_hidden[:, -20:, :]   # padding region
     real_repr = last_hidden[:, :64, :]    # real subject tokens
     print(f"  Real token repr std  : {real_repr.std().item():.4f}")
