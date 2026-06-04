@@ -287,7 +287,6 @@ def run_baselines(config=cfg):
               f"{r['macro_f1']:>9.4f} "
               f"{r[f'f1_spear-phishing']:>9.4f}")
 
-    # Add our model for comparison
     results_path = os.path.join(
         config.paths.results_dir, "training_results_full_model.json"
     )
@@ -305,8 +304,7 @@ def run_baselines(config=cfg):
     # ── Save all results ──────────────────────────────────────────
     os.makedirs(config.paths.results_dir, exist_ok=True)
     save_path = os.path.join(config.paths.results_dir, "baseline_results.json")
-
-    # Remove non-serializable classification_report nested dicts
+  
     save_results = {}
     for key, val in all_results.items():
         save_results[key] = {
