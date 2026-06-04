@@ -98,8 +98,6 @@ class DisentangledSelfAttention(nn.Module):
         self.head_size = m.head_size  # 32  (256 / 8)
         self.hidden_size = m.hidden_size  # 256
         self.scale = math.sqrt(3 * self.head_size)
-        # Scale by √(3·d) not √d because we sum 3 interaction terms
-        # each of variance ~d, so total variance ~3d → scale = √(3d)
 
         # ── Content projections (standard QKV) ───────────────────
         self.q_proj = nn.Linear(m.hidden_size, m.hidden_size, bias=False)
@@ -107,8 +105,6 @@ class DisentangledSelfAttention(nn.Module):
         self.v_proj = nn.Linear(m.hidden_size, m.hidden_size, bias=False)
 
         # ── Position projections (separate Q and K for position) ─
-        # pos_q_proj: projects position embeddings → position queries (for p2c)
-        # pos_k_proj: projects position embeddings → position keys    (for c2p)
         self.pos_q_proj = nn.Linear(m.hidden_size, m.hidden_size, bias=False)
         self.pos_k_proj = nn.Linear(m.hidden_size, m.hidden_size, bias=False)
 
@@ -207,17 +203,11 @@ class DisentangledSelfAttention(nn.Module):
         pos_keys = pos_keys.view(K_val, N, h)  # (2K, N, h)
         pos_keys = pos_keys.permute(1, 0, 2)  # (N, 2K, h)
 
-        # Q: (B, N, L, h) × pos_keys: (N, 2K, h)ᵀ → (B, N, L, 2K)
-        # This gives a score for every query against every possible position
         all_c2p = torch.matmul(Q, pos_keys.transpose(-2, -1))  # (B, N, L, 2K)
 
-        # Now select the right position score for each (i, j) pair
-        # idx_mat[i, j] tells us which position index to use for pair (i, j)
-        # idx_mat: (L, L) → expand to (B, N, L, L) for gathering
         idx = idx_mat.unsqueeze(0).unsqueeze(0)  # (1, 1, L, L)
         idx = idx.expand(B, N, L, L)  # (B, N, L, L)
-
-        # Gather: for each (b, n, i, j), pick all_c2p[b, n, i, idx[i,j]]
+      
         c2p = torch.gather(all_c2p, dim=-1, index=idx)  # (B, N, L, L)
 
         return c2p
@@ -256,12 +246,9 @@ class DisentangledSelfAttention(nn.Module):
         # pos_queries: (N, 2K, h) × K: (B, N, h, L) → (B, N, 2K, L)
         all_p2c = torch.matmul(pos_queries, K.transpose(-2, -1))  # (B, N, 2K, L)
 
-        # Use transposed idx_mat for p2c (reverse distances)
         idx = idx_mat.t().unsqueeze(0).unsqueeze(0)  # (1, 1, L, L)
         idx = idx.expand(B, N, L, L)  # (B, N, L, L)
 
-        # Gather: for each (b, n, i, j), pick all_p2c[b, n, idx[i,j], j]
-        # Transpose all_p2c to (B, N, L, 2K) first for consistent gather dim
         all_p2c = all_p2c.permute(0, 1, 3, 2)  # (B, N, L, 2K)
         p2c = torch.gather(all_p2c, dim=-1, index=idx)  # (B, N, L, L)
 
@@ -334,7 +321,6 @@ def smoke_test():
     # Build inputs
     hidden_states = torch.randn(B, L, H, device=device)
     attention_mask = torch.ones(B, L, dtype=torch.long, device=device)
-    # Simulate padding: last 10 tokens of each sequence are pad
     attention_mask[:, -10:] = 0
 
     # Get position embeddings
@@ -386,8 +372,6 @@ def smoke_test():
 
     # ── Softmax check ────────────────────────────────────────────
     print(f"\n── Softmax sanity check ─────────────────────────")
-    # weights are float16 on GPU — row sums drift slightly from 1.0
-    # debug confirmed float32 scores sum perfectly; this is expected dtype behaviour
     weight_sums = weights.float().sum(dim=-1).reshape(-1)
     print(f"  Row sums min/max : {weight_sums.min().item():.4f} / {weight_sums.max().item():.4f}")
     print(f"  (float16 drift is expected — float32 scores verified correct in debug)")
@@ -423,8 +407,6 @@ def smoke_test():
     print(f"\n── Parameter count ──────────────────────────────")
     total = sum(p.numel() for p in attn.parameters())
     print(f"  DisentangledSelfAttention : {total:,} params")
-    # Expected: 5 linear layers × (H×H) = 5 × 256×256 = 327,680
-    # Plus out_proj bias: 256 → total ≈ 327,936
     print(f"  (Expected ~327,936 for hidden_size=256)")
 
     print("\n  ✅ All attention assertions passed.")
