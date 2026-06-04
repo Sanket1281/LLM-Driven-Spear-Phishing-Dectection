@@ -33,7 +33,7 @@ from sklearn.metrics import (
 )
 
 import matplotlib
-matplotlib.use("Agg")  # no display needed
+matplotlib.use("Agg") 
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -385,7 +385,6 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Install seaborn if missing
     try:
         import seaborn
     except ImportError:
